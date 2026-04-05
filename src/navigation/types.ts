@@ -1,0 +1,15 @@
+export type RootStackParamList = {
+  Home: undefined;
+  Settings: undefined;
+  JamaatDetail: { jamaatId: number };
+  Members: { jamaatId: number };
+  Expenses: { jamaatId: number };
+  Settlement: { jamaatId: number };
+  JamaatCompleted: { jamaatId: number };
+};
+
+declare global {
+  namespace ReactNavigation {
+    interface RootParamList extends RootStackParamList {}
+  }
+}

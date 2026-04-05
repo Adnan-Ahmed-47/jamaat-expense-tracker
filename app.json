@@ -1,30 +1,61 @@
 {
   "expo": {
-    "name": "JamaatCalc",
+    "name": "Tabligh Expenses",
     "slug": "JamaatCalc",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-masjid.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "image": "./assets/splash-background.jpg",
+      "resizeMode": "cover",
+      "backgroundColor": "#0f172a"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icon-masjid.png",
+        "backgroundColor": "#0f172a"
       },
-      "edgeToEdgeEnabled": true,
+      "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/icon-masjid.png"
+    },
+    "extra": {
+      "firebaseApiKey": "",
+      "firebaseProjectId": "",
+      "firebaseAppId": "",
+      "firebaseAuthDomain": "",
+      "firebaseStorageBucket": "",
+      "firebaseMessagingSenderId": ""
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0f172a",
+          "image": "./assets/splash-background.jpg",
+          "resizeMode": "cover",
+          "android": {
+            "backgroundColor": "#0f172a",
+            "image": "./assets/splash-background.jpg",
+            "resizeMode": "cover"
+          },
+          "ios": {
+            "backgroundColor": "#0f172a",
+            "image": "./assets/splash-background.jpg",
+            "resizeMode": "cover",
+            "enableFullScreenImage_legacy": true
+          }
+        }
+      ],
+      "expo-sqlite",
+      "@react-native-community/datetimepicker"
+    ]
   }
 }

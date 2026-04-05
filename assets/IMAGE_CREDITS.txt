@@ -1,0 +1,6 @@
+Masjid photography used for splash screen and app icon:
+
+  Unsplash — photo ID 1591604129939-f1efa4d9f7fa (Al-Masjid an-Nabawi, Medina)
+  License: https://unsplash.com/license
+
+Replace these files with your own artwork if you prefer not to use stock photography.
