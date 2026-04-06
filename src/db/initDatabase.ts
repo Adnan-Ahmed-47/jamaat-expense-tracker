@@ -68,4 +68,13 @@ export async function initDatabase(db: SQLiteDatabase): Promise<void> {
     }
     await db.execAsync('PRAGMA user_version = 2');
   }
+
+  if (v < 3) {
+    try {
+      await db.execAsync('ALTER TABLE jamaats ADD COLUMN created_by_uid TEXT');
+    } catch {
+      /* column may exist */
+    }
+    await db.execAsync('PRAGMA user_version = 3');
+  }
 }

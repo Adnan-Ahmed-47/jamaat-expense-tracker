@@ -2,7 +2,9 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { useAuth } from '../context/AuthContext';
+import { FirebaseRequiredScreen } from '../screens/FirebaseRequiredScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { JamaatDetailScreen } from '../screens/JamaatDetailScreen';
 import { MembersScreen } from '../screens/MembersScreen';
@@ -10,11 +12,15 @@ import { ExpensesScreen } from '../screens/ExpensesScreen';
 import { SettlementScreen } from '../screens/SettlementScreen';
 import { JamaatCompletedScreen } from '../screens/JamaatCompletedScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { JoinJamaatScreen } from '../screens/JoinJamaatScreen';
 import { colors } from '../theme/colors';
 import type { RootStackParamList } from './types';
 import { SafeNativeStackHeader } from './SafeNativeStackHeader';
+import { AuthNavigator } from './AuthNavigator';
+import { isFirebaseConfigured } from '../services/firebaseConfig';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const SetupStack = createNativeStackNavigator<{ FirebaseRequired: undefined }>();
 
 const navTheme = {
   ...DefaultTheme,
@@ -30,6 +36,38 @@ const navTheme = {
 
 export function RootNavigator() {
   const { t } = useTranslation();
+  const { loading, showMainApp } = useAuth();
+
+  if (!isFirebaseConfigured()) {
+    return (
+      <NavigationContainer theme={navTheme}>
+        <SetupStack.Navigator
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background },
+          }}
+        >
+          <SetupStack.Screen name="FirebaseRequired" component={FirebaseRequiredScreen} />
+        </SetupStack.Navigator>
+      </NavigationContainer>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.authBoot}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!showMainApp) {
+    return (
+      <NavigationContainer theme={navTheme}>
+        <AuthNavigator />
+      </NavigationContainer>
+    );
+  }
 
   return (
     <NavigationContainer theme={navTheme}>
@@ -53,6 +91,7 @@ export function RootNavigator() {
       >
         <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: t('settings') }} />
+        <Stack.Screen name="JoinJamaat" component={JoinJamaatScreen} options={{ title: t('joinJamaat') }} />
         <Stack.Screen name="JamaatDetail" component={JamaatDetailScreen} />
         <Stack.Screen name="Members" component={MembersScreen} />
         <Stack.Screen name="Expenses" component={ExpensesScreen} />
@@ -62,3 +101,12 @@ export function RootNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  authBoot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
+});

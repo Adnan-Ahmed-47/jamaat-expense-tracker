@@ -27,12 +27,12 @@
       "favicon": "./assets/icon-masjid.png"
     },
     "extra": {
-      "firebaseApiKey": "",
-      "firebaseProjectId": "",
-      "firebaseAppId": "",
-      "firebaseAuthDomain": "",
-      "firebaseStorageBucket": "",
-      "firebaseMessagingSenderId": ""
+      "firebaseApiKey": "AIzaSyCBUgeBgXJt2dc3RaAYrbqnnHZu1KD3_EM",
+      "firebaseProjectId": "jamaatledger",
+      "firebaseAppId": "1:778134499548:android:1fbb92b1938f3b85320419",
+      "firebaseAuthDomain": "jamaatledger.firebaseapp.com",
+      "firebaseStorageBucket": "jamaatledger.firebasestorage.app",
+      "firebaseMessagingSenderId": "778134499548"
     },
     "plugins": [
       [

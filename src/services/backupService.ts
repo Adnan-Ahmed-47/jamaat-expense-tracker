@@ -5,8 +5,8 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import type { BackupPayload } from '../db/repositories';
 import { exportFullBackup, importFullBackup } from '../db/repositories';
 
-export async function shareBackupJson(db: SQLiteDatabase): Promise<void> {
-  const payload = await exportFullBackup(db);
+export async function shareBackupJson(db: SQLiteDatabase, firebaseUid?: string): Promise<void> {
+  const payload = await exportFullBackup(db, firebaseUid);
   const json = JSON.stringify(payload, null, 2);
   const base = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
   if (!base) throw new Error('No writable directory');

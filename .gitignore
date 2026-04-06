@@ -42,3 +42,6 @@ yarn-error.*
 
 # Cursor / local history
 .history/
+
+# Accidental duplicate Firebase Android config downloads (rename to google-services.json locally if needed)
+google-services (*).json

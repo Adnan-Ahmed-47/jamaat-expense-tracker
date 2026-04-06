@@ -122,7 +122,7 @@ export function ExpensesScreen() {
           return;
         }
         try {
-          await updateExpenseDocumentCloud(editing.firestoreExpenseId, {
+          await updateExpenseDocumentCloud(j.firebaseDocId, editing.firestoreExpenseId, {
             title: tit,
             amount: amt,
             expenseDate: date,
@@ -142,8 +142,7 @@ export function ExpensesScreen() {
         return;
       }
       try {
-        const fsId = await addExpenseDocumentCloud({
-          jamaatFirestoreId: j.firebaseDocId,
+        const fsId = await addExpenseDocumentCloud(j.firebaseDocId, {
           title: tit,
           amount: amt,
           expenseDate: date,
@@ -174,7 +173,12 @@ export function ExpensesScreen() {
         onPress: async () => {
           if (e.firestoreExpenseId && isFirebaseConfigured()) {
             try {
-              await deleteExpenseDocumentCloud(e.firestoreExpenseId);
+              const jamaat = await getJamaatById(db, jamaatId);
+              if (!jamaat?.firebaseDocId) {
+                Alert.alert(t('error'), t('memberNotSynced'));
+                return;
+              }
+              await deleteExpenseDocumentCloud(jamaat.firebaseDocId, e.firestoreExpenseId);
             } catch (err) {
               console.warn(err);
               Alert.alert(t('error'), t('networkError'));

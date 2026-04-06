@@ -1,3 +1,10 @@
+/**
+ * Firestore helpers for Jamaats: data lives under
+ *   jamaats/{jamaatId}
+ *   jamaats/{jamaatId}/members/{memberId}
+ *   jamaats/{jamaatId}/expenses/{expenseId}
+ * Real-time listeners keep SQLite in sync for offline-friendly UX.
+ */
 import {
   addDoc,
   collection,
@@ -18,15 +25,25 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import {
   getJamaatByFirebaseDocId,
   insertJamaat,
+  insertMember,
   replaceJamaatChildrenFromCloud,
   updateJamaatCloudIds,
+  updateJamaatCreatedByUid,
   type CloudExpenseRow,
   type CloudMemberRow,
 } from '../db/repositories';
 import { getDb, isFirebaseConfigured } from './firebaseConfig';
-import { getOrCreateUserId } from './userIdentity';
+import { getCurrentUser } from './authService';
 
 const CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function membersCol(db: ReturnType<typeof getDb>, jamaatId: string) {
+  return collection(db, 'jamaats', jamaatId, 'members');
+}
+
+function expensesCol(db: ReturnType<typeof getDb>, jamaatId: string) {
+  return collection(db, 'jamaats', jamaatId, 'expenses');
+}
 
 function coerceYmd(v: unknown): string {
   if (v == null) return '';
@@ -44,7 +61,7 @@ function cloudMemberFromDoc(docSnap: QueryDocumentSnapshot<DocumentData>): Cloud
   const leave = data.leaveDate;
   return {
     id: docSnap.id,
-    userId: data.userId ?? null,
+    userId: data.uid ?? data.userId ?? null,
     name: String(data.name ?? ''),
     contribution: Number(data.contribution ?? 0),
     joinDate: coerceYmd(data.joinDate),
@@ -101,27 +118,40 @@ export type CreateJamaatCloudInput = {
   name: string;
   startDate: string;
   endDate: string;
-  createdByUserId: string;
+  /** Firebase Auth uid of the creator */
+  createdBy: string;
+  /** Shown as the first member name in cloud + local DB */
+  creatorDisplayName: string;
 };
 
 export async function createJamaatCloud(data: CreateJamaatCloudInput): Promise<{
   firebaseDocId: string;
   inviteCode: string;
+  creatorMemberFirestoreId: string;
 }> {
   if (!isFirebaseConfigured()) {
     throw new Error('Firebase not configured');
   }
   const db = getDb();
   const inviteCode = await generateInviteCode();
-  const ref = await addDoc(collection(db, 'jamaats'), {
+  const jRef = await addDoc(collection(db, 'jamaats'), {
     inviteCode,
     name: data.name,
     startDate: data.startDate,
     endDate: data.endDate,
     createdAt: serverTimestamp(),
-    createdByUserId: data.createdByUserId,
+    createdBy: data.createdBy,
   });
-  return { firebaseDocId: ref.id, inviteCode };
+  const jamaatId = jRef.id;
+  const mRef = await addDoc(membersCol(db, jamaatId), {
+    uid: data.createdBy,
+    name: data.creatorDisplayName.trim(),
+    contribution: 0,
+    joinDate: data.startDate,
+    leaveDate: null,
+    joinedAt: serverTimestamp(),
+  });
+  return { firebaseDocId: jamaatId, inviteCode, creatorMemberFirestoreId: mRef.id };
 }
 
 export async function updateJamaatDocumentCloud(
@@ -150,46 +180,53 @@ export async function isUserMemberOfJamaatCloud(
   userId: string
 ): Promise<boolean> {
   const db = getDb();
-  const q = query(
-    collection(db, 'members'),
-    where('jamaatFirestoreId', '==', jamaatFirestoreId),
-    where('userId', '==', userId),
-    limit(1)
-  );
+  const q = query(membersCol(db, jamaatFirestoreId), where('uid', '==', userId), limit(1));
   const snap = await getDocs(q);
   return !snap.empty;
 }
 
 export type CloudMemberPayload = {
-  jamaatFirestoreId: string;
-  userId: string | null;
+  uid: string | null;
   name: string;
   contribution: number;
   joinDate: string;
   leaveDate: string | null;
 };
 
-export async function addMemberDocumentCloud(payload: CloudMemberPayload): Promise<string> {
+export async function addMemberDocumentCloud(
+  jamaatFirestoreId: string,
+  payload: CloudMemberPayload
+): Promise<string> {
   const db = getDb();
-  const ref = await addDoc(collection(db, 'members'), payload);
+  const ref = await addDoc(membersCol(db, jamaatFirestoreId), {
+    uid: payload.uid,
+    name: payload.name,
+    contribution: payload.contribution,
+    joinDate: payload.joinDate,
+    leaveDate: payload.leaveDate,
+    joinedAt: serverTimestamp(),
+  });
   return ref.id;
 }
 
 export async function updateMemberDocumentCloud(
+  jamaatFirestoreId: string,
   firestoreMemberId: string,
-  patch: Partial<CloudMemberPayload>
+  patch: Partial<Pick<CloudMemberPayload, 'name' | 'contribution' | 'joinDate' | 'leaveDate' | 'uid'>>
 ): Promise<void> {
   const db = getDb();
-  await updateDoc(doc(db, 'members', firestoreMemberId), patch);
+  await updateDoc(doc(db, 'jamaats', jamaatFirestoreId, 'members', firestoreMemberId), patch);
 }
 
-export async function deleteMemberDocumentCloud(firestoreMemberId: string): Promise<void> {
+export async function deleteMemberDocumentCloud(
+  jamaatFirestoreId: string,
+  firestoreMemberId: string
+): Promise<void> {
   const db = getDb();
-  await deleteDoc(doc(db, 'members', firestoreMemberId));
+  await deleteDoc(doc(db, 'jamaats', jamaatFirestoreId, 'members', firestoreMemberId));
 }
 
 export type CloudExpensePayload = {
-  jamaatFirestoreId: string;
   title: string;
   amount: number;
   expenseDate: string;
@@ -197,40 +234,52 @@ export type CloudExpensePayload = {
   paidByMemberFirestoreId: string;
 };
 
-export async function addExpenseDocumentCloud(payload: CloudExpensePayload): Promise<string> {
+export async function addExpenseDocumentCloud(
+  jamaatFirestoreId: string,
+  payload: CloudExpensePayload
+): Promise<string> {
   const db = getDb();
-  const ref = await addDoc(collection(db, 'expenses'), payload);
+  const ref = await addDoc(expensesCol(db, jamaatFirestoreId), {
+    title: payload.title,
+    amount: payload.amount,
+    expenseDate: payload.expenseDate,
+    category: payload.category,
+    paidByMemberFirestoreId: payload.paidByMemberFirestoreId,
+    createdAt: serverTimestamp(),
+  });
   return ref.id;
 }
 
 export async function updateExpenseDocumentCloud(
+  jamaatFirestoreId: string,
   firestoreExpenseId: string,
   patch: Partial<CloudExpensePayload>
 ): Promise<void> {
   const db = getDb();
-  await updateDoc(doc(db, 'expenses', firestoreExpenseId), patch);
+  await updateDoc(doc(db, 'jamaats', jamaatFirestoreId, 'expenses', firestoreExpenseId), patch);
 }
 
-export async function deleteExpenseDocumentCloud(firestoreExpenseId: string): Promise<void> {
+export async function deleteExpenseDocumentCloud(
+  jamaatFirestoreId: string,
+  firestoreExpenseId: string
+): Promise<void> {
   const db = getDb();
-  await deleteDoc(doc(db, 'expenses', firestoreExpenseId));
+  await deleteDoc(doc(db, 'jamaats', jamaatFirestoreId, 'expenses', firestoreExpenseId));
 }
 
 export async function fetchMembersForJamaatCloud(jamaatFirestoreId: string) {
   const db = getDb();
-  const q = query(collection(db, 'members'), where('jamaatFirestoreId', '==', jamaatFirestoreId));
-  const snap = await getDocs(q);
+  const snap = await getDocs(membersCol(db, jamaatFirestoreId));
   return snap.docs;
 }
 
 export async function fetchExpensesForJamaatCloud(jamaatFirestoreId: string) {
   const db = getDb();
-  const q = query(collection(db, 'expenses'), where('jamaatFirestoreId', '==', jamaatFirestoreId));
-  const snap = await getDocs(q);
+  const snap = await getDocs(expensesCol(db, jamaatFirestoreId));
   return snap.docs;
 }
 
-export type JoinJamaatErrorCode = 'invalid' | 'duplicate' | 'network' | 'firebase';
+export type JoinJamaatErrorCode = 'invalid' | 'duplicate' | 'network' | 'firebase' | 'auth';
 
 export async function joinJamaatByCode(
   dbSqlite: SQLiteDatabase,
@@ -242,22 +291,30 @@ export async function joinJamaatByCode(
   if (!isFirebaseConfigured()) {
     return { localJamaatId: 0, error: 'firebase', message: 'Firebase not configured' };
   }
+  const user = getCurrentUser();
+  if (!user) {
+    return { localJamaatId: 0, error: 'auth', message: 'Sign in required' };
+  }
   try {
     const normalized = normalizeInviteCode(rawCode);
+    if (!normalized || normalized === 'JAM-') {
+      return { localJamaatId: 0, error: 'invalid', message: 'Invalid Code' };
+    }
     const jDoc = await findJamaatDocByInviteCode(normalized);
     if (!jDoc) {
       return { localJamaatId: 0, error: 'invalid', message: 'Invalid Code' };
     }
     const firebaseDocId = jDoc.id;
     const d = jDoc.data();
-    const userId = await getOrCreateUserId();
+    const userId = user.uid;
+    const createdByFs =
+      typeof d.createdBy === 'string' && d.createdBy.length > 0 ? d.createdBy : null;
     const existingLocal = await getJamaatByFirebaseDocId(dbSqlite, firebaseDocId);
     const alreadyCloud = await isUserMemberOfJamaatCloud(firebaseDocId, userId);
 
     if (!alreadyCloud) {
-      await addMemberDocumentCloud({
-        jamaatFirestoreId: firebaseDocId,
-        userId,
+      await addMemberDocumentCloud(firebaseDocId, {
+        uid: userId,
         name: displayName.trim(),
         contribution,
         joinDate,
@@ -273,10 +330,19 @@ export async function joinJamaatByCode(
     let localJamaatId: number;
     if (existingLocal) {
       localJamaatId = existingLocal.id;
+      if (createdByFs) {
+        await updateJamaatCreatedByUid(dbSqlite, localJamaatId, createdByFs);
+      }
     } else {
       const start = coerceYmd(d.startDate) || joinDate;
       const end = coerceYmd(d.endDate) || joinDate;
-      localJamaatId = await insertJamaat(dbSqlite, String(d.name ?? 'Jamaat'), start, end);
+      localJamaatId = await insertJamaat(
+        dbSqlite,
+        String(d.name ?? 'Jamaat'),
+        start,
+        end,
+        createdByFs
+      );
       await updateJamaatCloudIds(
         dbSqlite,
         localJamaatId,
@@ -302,8 +368,8 @@ export function subscribeJamaatRealtime(
   onSynced: () => void
 ): Unsubscribe {
   const db = getDb();
-  const qM = query(collection(db, 'members'), where('jamaatFirestoreId', '==', jamaatFirestoreId));
-  const qE = query(collection(db, 'expenses'), where('jamaatFirestoreId', '==', jamaatFirestoreId));
+  const qM = membersCol(db, jamaatFirestoreId);
+  const qE = expensesCol(db, jamaatFirestoreId);
 
   let timer: ReturnType<typeof setTimeout> | undefined;
 

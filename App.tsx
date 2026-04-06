@@ -10,9 +10,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
+import { AuthProvider } from './src/context/AuthContext';
 import { initDatabase } from './src/db/initDatabase';
 import { initI18n } from './src/i18n';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { TypographyProvider } from './src/theme/TypographyProvider';
 
 void SplashScreen.setOptions({ fade: true, duration: 350 });
 
@@ -55,10 +57,14 @@ export default function App() {
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics ?? undefined}>
-      <SQLiteProvider databaseName="jamaat.db" onInit={initDatabase}>
-        <RootNavigator />
-        <StatusBar style="light" />
-      </SQLiteProvider>
+      <AuthProvider>
+        <TypographyProvider>
+          <SQLiteProvider databaseName="jamaat.db" onInit={initDatabase}>
+            <RootNavigator />
+            <StatusBar style="light" />
+          </SQLiteProvider>
+        </TypographyProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

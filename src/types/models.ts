@@ -9,6 +9,8 @@ export interface Jamaat {
   /** Linked Firestore `jamaats` document id when using cloud sync */
   firebaseDocId?: string | null;
   inviteCode?: string | null;
+  /** Firebase Auth uid of the jamaat creator (for per-user lists) */
+  createdByUid?: string | null;
 }
 
 export interface Member {

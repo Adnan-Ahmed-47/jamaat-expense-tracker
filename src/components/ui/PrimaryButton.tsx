@@ -8,6 +8,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { colors } from '../../theme/colors';
+import { useTypography } from '../../theme/TypographyProvider';
 
 type Props = PressableProps & {
   title: string;
@@ -16,6 +17,7 @@ type Props = PressableProps & {
 };
 
 export function PrimaryButton({ title, variant = 'primary', style, disabled, ...rest }: Props) {
+  const { urduFont } = useTypography();
   return (
     <Pressable
       accessibilityRole="button"
@@ -34,6 +36,7 @@ export function PrimaryButton({ title, variant = 'primary', style, disabled, ...
       <Text
         style={[
           styles.text,
+          urduFont ? { fontFamily: urduFont } : null,
           variant === 'outline' && styles.textOutline,
           variant === 'danger' && styles.textDanger,
         ]}

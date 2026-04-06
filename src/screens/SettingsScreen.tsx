@@ -11,8 +11,10 @@ import type { AppLanguage } from '../i18n';
 import { setAppLanguage } from '../i18n';
 import type { RootStackParamList } from '../navigation/types';
 import { pickAndParseBackup, restoreBackup, shareBackupJson } from '../services/backupService';
+import { signOutUser } from '../services/authService';
 import { isFirebaseConfigured } from '../services/firebaseConfig';
 import { colors } from '../theme/colors';
+import { useAuth } from '../context/AuthContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
@@ -26,6 +28,7 @@ export function SettingsScreen() {
   const { t, i18n } = useTranslation();
   const nav = useNavigation<Nav>();
   const db = useSQLiteContext();
+  const { user } = useAuth();
 
   const changeLang = async (code: AppLanguage) => {
     await setAppLanguage(code);
@@ -33,11 +36,28 @@ export function SettingsScreen() {
 
   const backup = async () => {
     try {
-      await shareBackupJson(db);
+      await shareBackupJson(db, user?.uid);
       Alert.alert('', t('backupSuccess'));
     } catch {
       Alert.alert(t('error'), t('error'));
     }
+  };
+
+  const signOut = () => {
+    Alert.alert(t('signOut'), t('signOutConfirm'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('signOut'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOutUser();
+          } catch {
+            Alert.alert(t('error'), t('error'));
+          }
+        },
+      },
+    ]);
   };
 
   const restore = () => {
@@ -64,6 +84,18 @@ export function SettingsScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scroll}>
+        {user ? (
+          <>
+            <Text style={styles.section}>{t('accountSection')}</Text>
+            <AppCard>
+              <Text style={styles.accountLine}>
+                {t('signedInAs')} {user.email ?? user.phoneNumber ?? user.uid}
+              </Text>
+              <PrimaryButton title={t('signOut')} variant="outline" onPress={signOut} />
+            </AppCard>
+          </>
+        ) : null}
+
         <Text style={styles.section}>{t('language')}</Text>
         <AppCard>
           {LANGS.map((l) => (
@@ -116,4 +148,5 @@ const styles = StyleSheet.create({
   langTextOn: { color: '#fff', fontWeight: '700' },
   cloudBody: { fontSize: 14, color: colors.text, lineHeight: 20, marginBottom: 12 },
   cloudStatus: { fontSize: 14, fontWeight: '700', color: colors.primaryDark },
+  accountLine: { fontSize: 14, color: colors.text, marginBottom: 12, lineHeight: 20 },
 });

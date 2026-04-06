@@ -1,18 +1,27 @@
 import React from 'react';
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { colors } from '../../theme/colors';
+import { useTypography } from '../../theme/TypographyProvider';
 
 type Props = TextInputProps & {
   label: string;
 };
 
 export function LabeledInput({ label, style, ...rest }: Props) {
+  const { urduFont, textAlign, writingDirection } = useTypography();
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, urduFont ? { fontFamily: urduFont } : null, { textAlign, writingDirection }]}>
+        {label}
+      </Text>
       <TextInput
         placeholderTextColor={colors.textMuted}
-        style={[styles.input, style]}
+        style={[
+          styles.input,
+          urduFont ? { fontFamily: urduFont } : null,
+          { textAlign, writingDirection },
+          style,
+        ]}
         {...rest}
       />
     </View>

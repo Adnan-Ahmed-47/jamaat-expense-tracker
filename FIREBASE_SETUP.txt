@@ -1,0 +1,83 @@
+================================================================================
+  Jamaat Ledger — Firebase setup (required for this app)
+================================================================================
+
+IMPORTANT
+  This app requires Firebase to be configured before anyone can sign in or use
+  the app. There is no "offline-only" mode. Add your keys to app.json, then
+  restart Expo.
+
+WHAT IS FIREBASE?
+  Firebase is Google's free backend service. This app uses it for:
+  - Sign in with email or phone
+  - User accounts (register / login)
+  - Saving jamaat data in the cloud and invite codes
+  - Real-time sync between devices
+
+WHAT ARE "FIREBASE KEYS"?
+  They are not passwords you type in the app. They are identifiers copied from
+  the Firebase website into your project's app.json file so the app knows WHICH
+  Firebase project to connect to.
+
+--------------------------------------------------------------------------------
+  STEP 1 — Create a Firebase project
+--------------------------------------------------------------------------------
+  1. Open https://console.firebase.google.com in a browser.
+  2. Click "Add project" (or use an existing project).
+  3. Follow the wizard (you can turn off Google Analytics if you want).
+
+--------------------------------------------------------------------------------
+  STEP 2 — Register a Web app and copy the config
+--------------------------------------------------------------------------------
+  1. In the Firebase project, click the gear icon → Project settings.
+  2. Scroll to "Your apps" → click the Web icon </> to add a Web app.
+  3. Register the app (any nickname is fine).
+  4. Firebase shows a "firebaseConfig" object like:
+
+       apiKey: "..."
+       authDomain: "....firebaseapp.com"
+       projectId: "..."
+       storageBucket: "....appspot.com"
+       messagingSenderId: "..."
+       appId: "..."
+
+  5. Copy these values.
+
+--------------------------------------------------------------------------------
+  STEP 3 — Paste into app.json
+--------------------------------------------------------------------------------
+  Open:  app.json
+  Find:  "extra": { ... }
+
+  Fill in (use YOUR values from Firebase):
+
+    "firebaseApiKey": "paste apiKey here",
+    "firebaseProjectId": "paste projectId here",
+    "firebaseAppId": "paste appId here",
+    "firebaseAuthDomain": "paste authDomain here",
+    "firebaseStorageBucket": "paste storageBucket here",
+    "firebaseMessagingSenderId": "paste messagingSenderId here"
+
+  Save the file.
+
+--------------------------------------------------------------------------------
+  STEP 4 — Enable Authentication and Firestore
+--------------------------------------------------------------------------------
+  In Firebase Console:
+  - Build → Authentication → Get started → enable "Email/Password" and "Phone"
+    (Phone may need a test number for development).
+  - Build → Firestore Database → Create database (start in test mode for
+    development, then deploy security rules from firestore.rules in this repo).
+
+--------------------------------------------------------------------------------
+  STEP 5 — Restart Expo
+--------------------------------------------------------------------------------
+  Stop the dev server (Ctrl+C) and run again:
+
+    npx expo start
+
+  You should see the Login screen. Create an account (Sign up) or sign in.
+
+================================================================================
+  File that reads these keys in code: src/services/firebaseConfig.ts
+================================================================================

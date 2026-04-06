@@ -111,9 +111,9 @@ export function MembersScreen() {
     const cloud = Boolean(j?.firebaseDocId) && isFirebaseConfigured();
 
     if (editing) {
-      if (cloud && editing.firestoreMemberId) {
+      if (cloud && editing.firestoreMemberId && j?.firebaseDocId) {
         try {
-          await updateMemberDocumentCloud(editing.firestoreMemberId, {
+          await updateMemberDocumentCloud(j.firebaseDocId, editing.firestoreMemberId, {
             name: n,
             contribution: c,
             joinDate: join,
@@ -128,9 +128,8 @@ export function MembersScreen() {
       await updateMember(db, editing.id, n, c, join, leaveVal);
     } else if (cloud && j?.firebaseDocId) {
       try {
-        const fsId = await addMemberDocumentCloud({
-          jamaatFirestoreId: j.firebaseDocId,
-          userId: null,
+        const fsId = await addMemberDocumentCloud(j.firebaseDocId, {
+          uid: null,
           name: n,
           contribution: c,
           joinDate: join,
@@ -163,9 +162,10 @@ export function MembersScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            if (m.firestoreMemberId && isFirebaseConfigured()) {
+            const jamaat = await getJamaatById(db, jamaatId);
+            if (m.firestoreMemberId && isFirebaseConfigured() && jamaat?.firebaseDocId) {
               try {
-                await deleteMemberDocumentCloud(m.firestoreMemberId);
+                await deleteMemberDocumentCloud(jamaat.firebaseDocId, m.firestoreMemberId);
               } catch (e) {
                 console.warn(e);
                 Alert.alert(t('error'), t('networkError'));

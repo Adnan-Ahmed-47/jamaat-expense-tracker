@@ -13,6 +13,7 @@ type JamaatRow = {
   created_at: string;
   firebase_doc_id?: string | null;
   invite_code?: string | null;
+  created_by_uid?: string | null;
 };
 
 type MemberRow = {
@@ -46,6 +47,7 @@ function mapJamaat(r: JamaatRow): Jamaat {
     createdAt: r.created_at,
     firebaseDocId: r.firebase_doc_id ?? null,
     inviteCode: r.invite_code ?? null,
+    createdByUid: r.created_by_uid ?? null,
   };
 }
 
@@ -82,6 +84,21 @@ export async function getAllJamaats(db: SQLiteDatabase): Promise<Jamaat[]> {
   return rows.map(mapJamaat);
 }
 
+/**
+ * Jamaats visible to this Firebase user: they created it, or they appear as a member (joined).
+ */
+export async function getJamaatsForUser(db: SQLiteDatabase, firebaseUid: string): Promise<Jamaat[]> {
+  const rows = await db.getAllAsync<JamaatRow>(
+    `SELECT DISTINCT j.* FROM jamaats j
+     WHERE j.created_by_uid = ?
+        OR j.id IN (SELECT jamaat_id FROM members WHERE user_id = ?)
+     ORDER BY datetime(j.created_at) DESC`,
+    firebaseUid,
+    firebaseUid
+  );
+  return rows.map(mapJamaat);
+}
+
 export async function getJamaatById(db: SQLiteDatabase, id: number): Promise<Jamaat | null> {
   const row = await db.getFirstAsync<JamaatRow>(`SELECT * FROM jamaats WHERE id = ?`, id);
   return row ? mapJamaat(row) : null;
@@ -102,17 +119,27 @@ export async function insertJamaat(
   db: SQLiteDatabase,
   name: string,
   startDate: string,
-  endDate: string
+  endDate: string,
+  createdByUid?: string | null
 ): Promise<number> {
   const created = nowIso();
   const res = await db.runAsync(
-    `INSERT INTO jamaats (name, start_date, end_date, created_at) VALUES (?, ?, ?, ?)`,
+    `INSERT INTO jamaats (name, start_date, end_date, created_at, created_by_uid) VALUES (?, ?, ?, ?, ?)`,
     name,
     startDate,
     endDate,
-    created
+    created,
+    createdByUid ?? null
   );
   return Number(res.lastInsertRowId);
+}
+
+export async function updateJamaatCreatedByUid(
+  db: SQLiteDatabase,
+  localId: number,
+  createdByUid: string | null
+): Promise<void> {
+  await db.runAsync(`UPDATE jamaats SET created_by_uid = ? WHERE id = ?`, createdByUid, localId);
 }
 
 export async function updateJamaatCloudIds(
@@ -386,8 +413,8 @@ export interface BackupPayload {
   expenses: Expense[];
 }
 
-export async function exportFullBackup(db: SQLiteDatabase): Promise<BackupPayload> {
-  const jamaats = await getAllJamaats(db);
+export async function exportFullBackup(db: SQLiteDatabase, firebaseUid?: string): Promise<BackupPayload> {
+  const jamaats = firebaseUid ? await getJamaatsForUser(db, firebaseUid) : await getAllJamaats(db);
   const members: Member[] = [];
   const expenses: Expense[] = [];
   for (const j of jamaats) {
@@ -413,7 +440,7 @@ export async function importFullBackup(db: SQLiteDatabase, payload: BackupPayloa
     const jamaatsSorted = [...payload.jamaats].sort((a, b) => a.id - b.id);
 
     for (const j of jamaatsSorted) {
-      const newId = await insertJamaat(db, j.name, j.startDate, j.endDate);
+      const newId = await insertJamaat(db, j.name, j.startDate, j.endDate, j.createdByUid ?? null);
       idMap.set(j.id, newId);
       if (j.firebaseDocId && j.inviteCode) {
         await updateJamaatCloudIds(db, newId, j.firebaseDocId, j.inviteCode);
