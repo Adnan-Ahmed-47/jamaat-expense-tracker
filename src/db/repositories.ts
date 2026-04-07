@@ -220,6 +220,19 @@ export async function getMembersByJamaat(db: SQLiteDatabase, jamaatId: number): 
   return rows.map(mapMember);
 }
 
+export async function getMemberByFirestoreMemberId(
+  db: SQLiteDatabase,
+  jamaatId: number,
+  firestoreMemberId: string
+): Promise<Member | null> {
+  const row = await db.getFirstAsync<MemberRow>(
+    `SELECT * FROM members WHERE jamaat_id = ? AND firestore_member_id = ? LIMIT 1`,
+    jamaatId,
+    firestoreMemberId
+  );
+  return row ? mapMember(row) : null;
+}
+
 export type InsertMemberOptions = {
   userId?: string | null;
   firestoreMemberId?: string | null;
@@ -234,17 +247,80 @@ export async function insertMember(
   leaveDate: string | null,
   options?: InsertMemberOptions
 ): Promise<number> {
-  const res = await db.runAsync(
-    `INSERT INTO members (jamaat_id, name, contribution, join_date, leave_date, user_id, firestore_member_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    jamaatId,
-    name,
-    contribution,
-    joinDate,
-    leaveDate,
-    options?.userId ?? null,
-    options?.firestoreMemberId ?? null
-  );
-  const newId = Number(res.lastInsertRowId);
+  let newId = 0;
+  const firestoreMemberId = options?.firestoreMemberId ?? null;
+  if (firestoreMemberId) {
+    const existing = await db.getFirstAsync<{ id: number }>(
+      `SELECT id FROM members WHERE jamaat_id = ? AND firestore_member_id = ? LIMIT 1`,
+      jamaatId,
+      firestoreMemberId
+    );
+    if (existing?.id) {
+      await db.runAsync(
+        `UPDATE members
+         SET name = ?, contribution = ?, join_date = ?, leave_date = ?, user_id = COALESCE(?, user_id)
+         WHERE id = ?`,
+        name,
+        contribution,
+        joinDate,
+        leaveDate,
+        options?.userId ?? null,
+        existing.id
+      );
+    } else {
+      try {
+        await db.runAsync(
+          `INSERT INTO members (jamaat_id, name, contribution, join_date, leave_date, user_id, firestore_member_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          jamaatId,
+          name,
+          contribution,
+          joinDate,
+          leaveDate,
+          options?.userId ?? null,
+          firestoreMemberId
+        );
+      } catch {
+        // Another writer may have inserted same cloud member in between.
+      }
+      const raced = await db.getFirstAsync<{ id: number }>(
+        `SELECT id FROM members WHERE jamaat_id = ? AND firestore_member_id = ? LIMIT 1`,
+        jamaatId,
+        firestoreMemberId
+      );
+      if (raced?.id) {
+        await db.runAsync(
+          `UPDATE members
+           SET name = ?, contribution = ?, join_date = ?, leave_date = ?, user_id = COALESCE(?, user_id)
+           WHERE id = ?`,
+          name,
+          contribution,
+          joinDate,
+          leaveDate,
+          options?.userId ?? null,
+          raced.id
+        );
+      }
+    }
+    const row = await db.getFirstAsync<{ id: number }>(
+      `SELECT id FROM members WHERE jamaat_id = ? AND firestore_member_id = ? LIMIT 1`,
+      jamaatId,
+      firestoreMemberId
+    );
+    newId = Number(row?.id ?? 0);
+  } else {
+    const res = await db.runAsync(
+      `INSERT INTO members (jamaat_id, name, contribution, join_date, leave_date, user_id, firestore_member_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      jamaatId,
+      name,
+      contribution,
+      joinDate,
+      leaveDate,
+      options?.userId ?? null,
+      null
+    );
+    newId = Number(res.lastInsertRowId);
+  }
   await reconcileJamaatDateBounds(db, jamaatId);
   return newId;
 }
@@ -287,17 +363,80 @@ export async function insertExpense(
   category: ExpenseCategory,
   options?: InsertExpenseOptions
 ): Promise<number> {
-  const res = await db.runAsync(
-    `INSERT INTO expenses (jamaat_id, title, amount, expense_date, paid_by_member_id, category, firestore_expense_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    jamaatId,
-    title,
-    amount,
-    expenseDate,
-    paidByMemberId,
-    category,
-    options?.firestoreExpenseId ?? null
-  );
-  const newId = Number(res.lastInsertRowId);
+  let newId = 0;
+  const firestoreExpenseId = options?.firestoreExpenseId ?? null;
+  if (firestoreExpenseId) {
+    const existing = await db.getFirstAsync<{ id: number }>(
+      `SELECT id FROM expenses WHERE jamaat_id = ? AND firestore_expense_id = ? LIMIT 1`,
+      jamaatId,
+      firestoreExpenseId
+    );
+    if (existing?.id) {
+      await db.runAsync(
+        `UPDATE expenses
+         SET title = ?, amount = ?, expense_date = ?, paid_by_member_id = ?, category = ?
+         WHERE id = ?`,
+        title,
+        amount,
+        expenseDate,
+        paidByMemberId,
+        category,
+        existing.id
+      );
+    } else {
+      try {
+        await db.runAsync(
+          `INSERT INTO expenses (jamaat_id, title, amount, expense_date, paid_by_member_id, category, firestore_expense_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          jamaatId,
+          title,
+          amount,
+          expenseDate,
+          paidByMemberId,
+          category,
+          firestoreExpenseId
+        );
+      } catch {
+        // Another writer may have inserted same cloud expense in between.
+      }
+      const raced = await db.getFirstAsync<{ id: number }>(
+        `SELECT id FROM expenses WHERE jamaat_id = ? AND firestore_expense_id = ? LIMIT 1`,
+        jamaatId,
+        firestoreExpenseId
+      );
+      if (raced?.id) {
+        await db.runAsync(
+          `UPDATE expenses
+           SET title = ?, amount = ?, expense_date = ?, paid_by_member_id = ?, category = ?
+           WHERE id = ?`,
+          title,
+          amount,
+          expenseDate,
+          paidByMemberId,
+          category,
+          raced.id
+        );
+      }
+    }
+    const row = await db.getFirstAsync<{ id: number }>(
+      `SELECT id FROM expenses WHERE jamaat_id = ? AND firestore_expense_id = ? LIMIT 1`,
+      jamaatId,
+      firestoreExpenseId
+    );
+    newId = Number(row?.id ?? 0);
+  } else {
+    const res = await db.runAsync(
+      `INSERT INTO expenses (jamaat_id, title, amount, expense_date, paid_by_member_id, category, firestore_expense_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      jamaatId,
+      title,
+      amount,
+      expenseDate,
+      paidByMemberId,
+      category,
+      null
+    );
+    newId = Number(res.lastInsertRowId);
+  }
   await reconcileJamaatDateBounds(db, jamaatId);
   return newId;
 }
@@ -361,47 +500,45 @@ export async function replaceJamaatChildrenFromCloud(
   memberRows: CloudMemberRow[],
   expenseRows: CloudExpenseRow[]
 ): Promise<void> {
-  await db.withTransactionAsync(async () => {
-    await db.runAsync(`DELETE FROM expenses WHERE jamaat_id = ?`, localJamaatId);
-    await db.runAsync(`DELETE FROM members WHERE jamaat_id = ?`, localJamaatId);
+  await db.runAsync(`DELETE FROM expenses WHERE jamaat_id = ?`, localJamaatId);
+  await db.runAsync(`DELETE FROM members WHERE jamaat_id = ?`, localJamaatId);
 
-    const fsToLocal = new Map<string, number>();
+  const fsToLocal = new Map<string, number>();
 
-    for (const m of memberRows) {
-      const name = String(m.name ?? '');
-      const contribution = Number(m.contribution ?? 0);
-      const joinDate = String(m.joinDate ?? '');
-      const leaveDate = m.leaveDate != null ? String(m.leaveDate) : null;
-      const res = await db.runAsync(
-        `INSERT INTO members (jamaat_id, name, contribution, join_date, leave_date, user_id, firestore_member_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        localJamaatId,
-        name,
-        contribution,
-        joinDate,
-        leaveDate,
-        m.userId ?? null,
-        m.id
-      );
-      fsToLocal.set(m.id, Number(res.lastInsertRowId));
-    }
+  for (const m of memberRows) {
+    const name = String(m.name ?? '');
+    const contribution = Number(m.contribution ?? 0);
+    const joinDate = String(m.joinDate ?? '');
+    const leaveDate = m.leaveDate != null ? String(m.leaveDate) : null;
+    const res = await db.runAsync(
+      `INSERT INTO members (jamaat_id, name, contribution, join_date, leave_date, user_id, firestore_member_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      localJamaatId,
+      name,
+      contribution,
+      joinDate,
+      leaveDate,
+      m.userId ?? null,
+      m.id
+    );
+    fsToLocal.set(m.id, Number(res.lastInsertRowId));
+  }
 
-    for (const e of expenseRows) {
-      const payerFs = e.paidByMemberFirestoreId;
-      if (!payerFs) continue;
-      const localPayer = fsToLocal.get(payerFs);
-      if (localPayer === undefined) continue;
-      await db.runAsync(
-        `INSERT INTO expenses (jamaat_id, title, amount, expense_date, paid_by_member_id, category, firestore_expense_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        localJamaatId,
-        String(e.title ?? ''),
-        Number(e.amount ?? 0),
-        String(e.expenseDate ?? ''),
-        localPayer,
-        String(e.category ?? 'Misc'),
-        e.id
-      );
-    }
-  });
+  for (const e of expenseRows) {
+    const payerFs = e.paidByMemberFirestoreId;
+    if (!payerFs) continue;
+    const localPayer = fsToLocal.get(payerFs);
+    if (localPayer === undefined) continue;
+    await db.runAsync(
+      `INSERT INTO expenses (jamaat_id, title, amount, expense_date, paid_by_member_id, category, firestore_expense_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      localJamaatId,
+      String(e.title ?? ''),
+      Number(e.amount ?? 0),
+      String(e.expenseDate ?? ''),
+      localPayer,
+      String(e.category ?? 'Misc'),
+      e.id
+    );
+  }
   await reconcileJamaatDateBounds(db, localJamaatId);
 }
 

@@ -23,6 +23,7 @@ import { loginWithEmail, loginWithPhone } from '../services/authService';
 import { getFirebaseOptionsForRecaptcha } from '../services/firebaseConfig';
 import { colors } from '../theme/colors';
 import type { AuthStackParamList } from '../navigation/types';
+import { loginErrorMessage } from '../utils/authErrors';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -51,7 +52,7 @@ export function LoginScreen() {
     } catch (err) {
       console.warn(err);
       if (nav.isFocused()) {
-        Alert.alert(t('error'), t('loginFailed'));
+        Alert.alert(t('error'), loginErrorMessage(err, t));
       }
     } finally {
       setBusy(false);
@@ -118,8 +119,18 @@ export function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              passwordToggle
               autoComplete="password"
             />
+            <Pressable
+              onPress={() => {
+                const e = email.trim();
+                nav.navigate('ForgotPassword', e ? { email: e } : {});
+              }}
+              style={styles.forgotWrap}
+            >
+              <Text style={styles.forgotText}>{t('forgotPasswordLink')}</Text>
+            </Pressable>
             <PrimaryButton title={t('login')} onPress={submitEmail} disabled={busy} />
           </>
         ) : (
@@ -171,4 +182,6 @@ const styles = StyleSheet.create({
   tabTextOn: { color: '#fff' },
   hint: { fontSize: 12, color: colors.textMuted, marginBottom: 8 },
   spin: { marginVertical: 12 },
+  forgotWrap: { alignSelf: 'flex-end', marginBottom: 14, marginTop: -4 },
+  forgotText: { fontSize: 14, fontWeight: '600', color: colors.primaryDark },
 });

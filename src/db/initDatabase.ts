@@ -77,4 +77,39 @@ export async function initDatabase(db: SQLiteDatabase): Promise<void> {
     }
     await db.execAsync('PRAGMA user_version = 3');
   }
+
+  if (v < 4) {
+    // Remove legacy duplicates before enforcing uniqueness on cloud ids.
+    await db.execAsync(`
+      DELETE FROM members
+      WHERE firestore_member_id IS NOT NULL
+        AND id NOT IN (
+          SELECT MIN(id)
+          FROM members
+          WHERE firestore_member_id IS NOT NULL
+          GROUP BY jamaat_id, firestore_member_id
+        );
+    `);
+    await db.execAsync(`
+      DELETE FROM expenses
+      WHERE firestore_expense_id IS NOT NULL
+        AND id NOT IN (
+          SELECT MIN(id)
+          FROM expenses
+          WHERE firestore_expense_id IS NOT NULL
+          GROUP BY jamaat_id, firestore_expense_id
+        );
+    `);
+    await db.execAsync(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_members_jamaat_firestore_unique
+       ON members(jamaat_id, firestore_member_id)
+       WHERE firestore_member_id IS NOT NULL`
+    );
+    await db.execAsync(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_expenses_jamaat_firestore_unique
+       ON expenses(jamaat_id, firestore_expense_id)
+       WHERE firestore_expense_id IS NOT NULL`
+    );
+    await db.execAsync('PRAGMA user_version = 4');
+  }
 }

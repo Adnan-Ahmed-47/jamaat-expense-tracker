@@ -67,6 +67,7 @@ export function SignupScreen() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          passwordToggle
         />
         <PrimaryButton title={t('signup')} onPress={submit} disabled={busy} />
         {busy ? <ActivityIndicator color={colors.primary} style={styles.spin} /> : null}

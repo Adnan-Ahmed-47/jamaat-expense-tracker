@@ -4,6 +4,7 @@
  */
 import {
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPhoneNumber,
   signOut as firebaseSignOut,
@@ -32,24 +33,35 @@ function requireDb() {
 /**
  * Writes/merges the standard user document in Firestore.
  * Call after every successful sign-in so email/phone stay current.
+ * Never throws: sign-in must succeed even if Firestore is missing, offline, or misconfigured.
  */
 export async function syncUserDocument(user: User): Promise<void> {
-  const db = requireDb();
-  const ref = doc(db, 'users', user.uid);
-  const snap = await getDoc(ref);
-  const email = user.email ?? undefined;
-  const phone = user.phoneNumber ?? undefined;
-  const payload: Record<string, unknown> = {
-    uid: user.uid,
-    displayName: user.displayName ?? null,
-    updatedAt: serverTimestamp(),
-  };
-  if (email) payload.email = email;
-  if (phone) payload.phone = phone;
-  if (!snap.exists) {
-    payload.createdAt = serverTimestamp();
+  try {
+    const db = requireDb();
+    const ref = doc(db, 'users', user.uid);
+    const snap = await getDoc(ref);
+    const email = user.email ?? undefined;
+    const phone = user.phoneNumber ?? undefined;
+    const payload: Record<string, unknown> = {
+      uid: user.uid,
+      displayName: user.displayName ?? null,
+      updatedAt: serverTimestamp(),
+    };
+    if (email) payload.email = email;
+    if (phone) payload.phone = phone;
+    if (!snap.exists) {
+      payload.createdAt = serverTimestamp();
+    }
+    await setDoc(ref, payload, { merge: true });
+  } catch (e) {
+    console.warn('syncUserDocument', e);
   }
-  await setDoc(ref, payload, { merge: true });
+}
+
+/** Sends Firebase password-reset email (user must exist; check Firebase Console → Auth → Templates). */
+export async function sendPasswordResetToEmail(email: string): Promise<void> {
+  const auth = requireAuth();
+  await sendPasswordResetEmail(auth, email.trim());
 }
 
 export async function signupWithEmail(

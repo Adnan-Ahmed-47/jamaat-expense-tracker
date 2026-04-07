@@ -41,11 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(u);
       setLoading(false);
       if (u) {
-        try {
-          await syncUserDocument(u);
-        } catch (e) {
-          console.warn('syncUserDocument', e);
-        }
+        await syncUserDocument(u);
       }
     });
     return unsub;

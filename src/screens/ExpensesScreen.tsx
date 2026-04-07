@@ -8,7 +8,6 @@ import {
   FlatList,
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -22,6 +21,7 @@ import {
   deleteExpense,
   getExpensesByJamaat,
   getJamaatById,
+  getMemberByFirestoreMemberId,
   getMembersByJamaat,
   insertExpense,
   reconcileJamaatDateBounds,
@@ -141,20 +141,33 @@ export function ExpensesScreen() {
         Alert.alert(t('error'), t('memberNotSynced'));
         return;
       }
+      const payerFsId = payer.firestoreMemberId;
+      let fsId = '';
       try {
-        const fsId = await addExpenseDocumentCloud(j.firebaseDocId, {
+        fsId = await addExpenseDocumentCloud(j.firebaseDocId, {
           title: tit,
           amount: amt,
           expenseDate: date,
           category,
-          paidByMemberFirestoreId: payer.firestoreMemberId,
-        });
-        await insertExpense(db, jamaatId, tit, amt, date, payerId, category, {
-          firestoreExpenseId: fsId,
+          paidByMemberFirestoreId: payerFsId,
         });
       } catch (e) {
         console.warn(e);
         Alert.alert(t('error'), t('networkError'));
+        return;
+      }
+      try {
+        const freshPayer = await getMemberByFirestoreMemberId(db, jamaatId, payerFsId);
+        if (!freshPayer) {
+          Alert.alert(t('error'), t('memberNotSynced'));
+          return;
+        }
+        await insertExpense(db, jamaatId, tit, amt, date, freshPayer.id, category, {
+          firestoreExpenseId: fsId,
+        });
+      } catch (e) {
+        console.warn(e);
+        Alert.alert(t('error'), t('error'));
         return;
       }
     } else {
@@ -222,54 +235,52 @@ export function ExpensesScreen() {
 
       <Modal visible={modal} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
-          <ScrollView contentContainerStyle={styles.modalScroll}>
-            <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>{editing ? t('editExpense') : t('addExpense')}</Text>
-              <LabeledInput label={t('expenseTitle')} value={title} onChangeText={setTitle} />
-              <LabeledInput
-                label={t('amount')}
-                value={amount}
-                onChangeText={setAmount}
-                keyboardType="decimal-pad"
-              />
-              <DatePickerField label={t('date')} valueYmd={date} onChangeYmd={setDate} />
-              <Text style={styles.catLabel}>{t('category')}</Text>
-              <View style={styles.catRow}>
-                {CATS.map((c) => (
-                  <Pressable
-                    key={c}
-                    onPress={() => setCategory(c)}
-                    style={[styles.chip, category === c && styles.chipOn]}
-                  >
-                    <Text style={[styles.chipText, category === c && styles.chipTextOn]}>
-                      {t(c === 'Food' ? 'food' : c === 'Travel' ? 'travel' : 'misc')}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-              <Text style={styles.catLabel}>{t('paidBy')}</Text>
-              <View style={styles.payerWrap}>
-                {members.map((m) => (
-                  <Pressable
-                    key={m.id}
-                    onPress={() => setPayerId(m.id)}
-                    style={[styles.chip, payerId === m.id && styles.chipOn]}
-                  >
-                    <Text style={[styles.chipText, payerId === m.id && styles.chipTextOn]}>
-                      {m.name}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-              <View style={styles.row}>
-                {editing && (
-                  <PrimaryButton title={t('delete')} variant="danger" onPress={() => remove(editing)} />
-                )}
-                <PrimaryButton title={t('cancel')} variant="outline" onPress={() => setModal(false)} />
-                <PrimaryButton title={t('save')} onPress={save} />
-              </View>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{editing ? t('editExpense') : t('addExpense')}</Text>
+            <LabeledInput label={t('expenseTitle')} value={title} onChangeText={setTitle} />
+            <LabeledInput
+              label={t('amount')}
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="decimal-pad"
+            />
+            <DatePickerField label={t('date')} valueYmd={date} onChangeYmd={setDate} />
+            <Text style={styles.catLabel}>{t('category')}</Text>
+            <View style={styles.catRow}>
+              {CATS.map((c) => (
+                <Pressable
+                  key={c}
+                  onPress={() => setCategory(c)}
+                  style={[styles.chip, category === c && styles.chipOn]}
+                >
+                  <Text style={[styles.chipText, category === c && styles.chipTextOn]}>
+                    {t(c === 'Food' ? 'food' : c === 'Travel' ? 'travel' : 'misc')}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
-          </ScrollView>
+            <Text style={styles.catLabel}>{t('paidBy')}</Text>
+            <View style={styles.payerWrap}>
+              {members.map((m) => (
+                <Pressable
+                  key={m.id}
+                  onPress={() => setPayerId(m.id)}
+                  style={[styles.chip, payerId === m.id && styles.chipOn]}
+                >
+                  <Text style={[styles.chipText, payerId === m.id && styles.chipTextOn]}>
+                    {m.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <View style={styles.row}>
+              {editing && (
+                <PrimaryButton title={t('delete')} variant="danger" onPress={() => remove(editing)} />
+              )}
+              <PrimaryButton title={t('cancel')} variant="outline" onPress={() => setModal(false)} />
+              <PrimaryButton title={t('save')} onPress={save} />
+            </View>
+          </View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -288,13 +299,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
-  modalScroll: { maxHeight: '100%' },
   modalCard: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 24,
-    paddingBottom: 36,
+    maxHeight: '92%',
   },
   modalTitle: { fontSize: 20, fontWeight: '700', color: colors.primaryDark, marginBottom: 16 },
   catLabel: {

@@ -1,9 +1,10 @@
 import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSQLiteContext } from 'expo-sqlite';
-import React, { useCallback, useLayoutEffect, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Modal,
@@ -56,6 +57,8 @@ export function MembersScreen() {
   const [join, setJoin] = useState('');
   const [leave, setLeave] = useState<string | null>(null);
   const [leaveEnabled, setLeaveEnabled] = useState(false);
+  const [actionBusy, setActionBusy] = useState(false);
+  const actionLockRef = useRef(false);
 
   const load = useCallback(async () => {
     await reconcileJamaatDateBounds(db, jamaatId);
@@ -98,54 +101,68 @@ export function MembersScreen() {
   };
 
   const save = async () => {
+    if (actionLockRef.current) return;
+    actionLockRef.current = true;
+    setActionBusy(true);
     const n = name.trim();
-    if (!n) return;
+    if (!n) {
+      actionLockRef.current = false;
+      setActionBusy(false);
+      return;
+    }
     const c = parseFloat(contribution.replace(/,/g, '')) || 0;
     const v = validateMemberDates(jamaatStart, jamaatEnd, join, leaveEnabled ? leave : null);
     if (!v.ok) {
       Alert.alert(t('error'), t(v.message));
+      actionLockRef.current = false;
+      setActionBusy(false);
       return;
     }
     const leaveVal = leaveEnabled && leave ? leave : null;
     const j = await getJamaatById(db, jamaatId);
     const cloud = Boolean(j?.firebaseDocId) && isFirebaseConfigured();
 
-    if (editing) {
-      if (cloud && editing.firestoreMemberId && j?.firebaseDocId) {
+    try {
+      if (editing) {
+        if (cloud && editing.firestoreMemberId && j?.firebaseDocId) {
+          try {
+            await updateMemberDocumentCloud(j.firebaseDocId, editing.firestoreMemberId, {
+              name: n,
+              contribution: c,
+              joinDate: join,
+              leaveDate: leaveVal,
+            });
+          } catch (e) {
+            console.warn(e);
+            Alert.alert(t('error'), t('networkError'));
+            return;
+          }
+        }
+        await updateMember(db, editing.id, n, c, join, leaveVal);
+      } else if (cloud && j?.firebaseDocId) {
         try {
-          await updateMemberDocumentCloud(j.firebaseDocId, editing.firestoreMemberId, {
+          const fsId = await addMemberDocumentCloud(j.firebaseDocId, {
+            uid: null,
             name: n,
             contribution: c,
             joinDate: join,
             leaveDate: leaveVal,
           });
+          await insertMember(db, jamaatId, n, c, join, leaveVal, { firestoreMemberId: fsId });
         } catch (e) {
           console.warn(e);
           Alert.alert(t('error'), t('networkError'));
           return;
         }
+      } else {
+        await insertMember(db, jamaatId, n, c, join, leaveVal);
       }
-      await updateMember(db, editing.id, n, c, join, leaveVal);
-    } else if (cloud && j?.firebaseDocId) {
-      try {
-        const fsId = await addMemberDocumentCloud(j.firebaseDocId, {
-          uid: null,
-          name: n,
-          contribution: c,
-          joinDate: join,
-          leaveDate: leaveVal,
-        });
-        await insertMember(db, jamaatId, n, c, join, leaveVal, { firestoreMemberId: fsId });
-      } catch (e) {
-        console.warn(e);
-        Alert.alert(t('error'), t('networkError'));
-        return;
-      }
-    } else {
-      await insertMember(db, jamaatId, n, c, join, leaveVal);
+      setModal(false);
+      await load();
+    } finally {
+      actionLockRef.current = false;
+      setActionBusy(false);
     }
-    setModal(false);
-    await load();
   };
 
   const remove = async (m: Member) => {
@@ -161,7 +178,11 @@ export function MembersScreen() {
         text: t('delete'),
         style: 'destructive',
         onPress: async () => {
+          if (actionLockRef.current) return;
           try {
+            actionLockRef.current = true;
+            setActionBusy(true);
+            setModal(false);
             const jamaat = await getJamaatById(db, jamaatId);
             if (m.firestoreMemberId && isFirebaseConfigured() && jamaat?.firebaseDocId) {
               try {
@@ -176,6 +197,9 @@ export function MembersScreen() {
             await load();
           } catch {
             Alert.alert(t('error'), t('cannotDeleteMember'));
+          } finally {
+            actionLockRef.current = false;
+            setActionBusy(false);
           }
         },
       },
@@ -247,11 +271,22 @@ export function MembersScreen() {
             )}
             <View style={styles.row}>
               {editing && (
-                <PrimaryButton title={t('delete')} variant="danger" onPress={() => remove(editing)} />
+                <PrimaryButton
+                  title={t('delete')}
+                  variant="danger"
+                  onPress={() => remove(editing)}
+                  disabled={actionBusy}
+                />
               )}
-              <PrimaryButton title={t('cancel')} variant="outline" onPress={() => setModal(false)} />
-              <PrimaryButton title={t('save')} onPress={save} />
+              <PrimaryButton
+                title={t('cancel')}
+                variant="outline"
+                onPress={() => setModal(false)}
+                disabled={actionBusy}
+              />
+              <PrimaryButton title={t('save')} onPress={save} disabled={actionBusy} />
             </View>
+            {actionBusy ? <ActivityIndicator color={colors.primary} style={styles.spin} /> : null}
           </View>
         </View>
       </Modal>
@@ -281,4 +316,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
   leaveRow: { marginBottom: 8 },
   leaveToggle: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 12 },
+  spin: { marginTop: 12 },
 });
