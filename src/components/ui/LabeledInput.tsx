@@ -13,13 +13,14 @@ type Props = TextInputProps & {
 
 export function LabeledInput({ label, passwordToggle, style, secureTextEntry, ...rest }: Props) {
   const { t } = useTranslation();
-  const { urduFont, textAlign, writingDirection } = useTypography();
+  const { scriptFont, urduFont, textAlign, writingDirection } = useTypography();
+  const font = scriptFont ?? urduFont;
   const [showPlain, setShowPlain] = useState(false);
   const effectiveSecure = passwordToggle ? !showPlain : secureTextEntry;
 
   return (
     <View style={styles.wrap}>
-      <Text style={[styles.label, urduFont ? { fontFamily: urduFont } : null, { textAlign, writingDirection }]}>
+      <Text style={[styles.label, font ? { fontFamily: font } : null, { textAlign, writingDirection }]}>
         {label}
       </Text>
       {passwordToggle ? (
@@ -28,7 +29,7 @@ export function LabeledInput({ label, passwordToggle, style, secureTextEntry, ..
             placeholderTextColor={colors.textMuted}
             style={[
               styles.inputPlain,
-              urduFont ? { fontFamily: urduFont } : null,
+              font ? { fontFamily: font } : null,
               { textAlign, writingDirection },
               style,
             ]}
@@ -54,7 +55,7 @@ export function LabeledInput({ label, passwordToggle, style, secureTextEntry, ..
           placeholderTextColor={colors.textMuted}
           style={[
             styles.input,
-            urduFont ? { fontFamily: urduFont } : null,
+            font ? { fontFamily: font } : null,
             { textAlign, writingDirection },
             style,
           ]}

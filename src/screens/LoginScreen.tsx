@@ -131,6 +131,9 @@ export function LoginScreen() {
             >
               <Text style={styles.forgotText}>{t('forgotPasswordLink')}</Text>
             </Pressable>
+            <Pressable onPress={() => nav.navigate('ResetPassword')} style={styles.inAppResetWrap}>
+              <Text style={styles.inAppResetText}>{t('setNewPasswordInApp')}</Text>
+            </Pressable>
             <PrimaryButton title={t('login')} onPress={submitEmail} disabled={busy} />
           </>
         ) : (
@@ -182,6 +185,8 @@ const styles = StyleSheet.create({
   tabTextOn: { color: '#fff' },
   hint: { fontSize: 12, color: colors.textMuted, marginBottom: 8 },
   spin: { marginVertical: 12 },
-  forgotWrap: { alignSelf: 'flex-end', marginBottom: 14, marginTop: -4 },
+  forgotWrap: { alignSelf: 'flex-end', marginBottom: 8, marginTop: -4 },
   forgotText: { fontSize: 14, fontWeight: '600', color: colors.primaryDark },
+  inAppResetWrap: { alignSelf: 'flex-end', marginBottom: 14 },
+  inAppResetText: { fontSize: 13, fontWeight: '600', color: colors.primary },
 });

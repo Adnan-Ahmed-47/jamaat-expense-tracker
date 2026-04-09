@@ -7,10 +7,11 @@
     "icon": "./assets/icon-masjid.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "jamaatcalc",
     "splash": {
-      "image": "./assets/splash-background.jpg",
+      "image": "./assets/splash-solid.png",
       "resizeMode": "cover",
-      "backgroundColor": "#0f172a"
+      "backgroundColor": "#2E7D32"
     },
     "ios": {
       "supportsTablet": true
@@ -18,10 +19,11 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon-masjid.png",
-        "backgroundColor": "#0f172a"
+        "backgroundColor": "#2E7D32"
       },
       "edgeToEdgeEnabled": false,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.JamaatCalc"
     },
     "web": {
       "favicon": "./assets/icon-masjid.png"
@@ -38,19 +40,18 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0f172a",
-          "image": "./assets/splash-background.jpg",
+          "image": "./assets/splash-solid.png",
+          "backgroundColor": "#2E7D32",
           "resizeMode": "cover",
           "android": {
-            "backgroundColor": "#0f172a",
-            "image": "./assets/splash-background.jpg",
+            "image": "./assets/splash-solid.png",
+            "backgroundColor": "#2E7D32",
             "resizeMode": "cover"
           },
           "ios": {
-            "backgroundColor": "#0f172a",
-            "image": "./assets/splash-background.jpg",
-            "resizeMode": "cover",
-            "enableFullScreenImage_legacy": true
+            "image": "./assets/splash-solid.png",
+            "backgroundColor": "#2E7D32",
+            "resizeMode": "cover"
           }
         }
       ],

@@ -2,7 +2,9 @@
  * Authentication helpers: email/password and phone OTP (Firebase).
  * User profile is stored in Firestore `users/{uid}` for display and joins.
  */
+import * as Linking from 'expo-linking';
 import {
+  confirmPasswordReset,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -58,10 +60,28 @@ export async function syncUserDocument(user: User): Promise<void> {
   }
 }
 
-/** Sends Firebase password-reset email (user must exist; check Firebase Console → Auth → Templates). */
+/**
+ * Sends Firebase password-reset email. Optionally includes continue URL for in-app handling.
+ * Add the URL host to Firebase Console → Authentication → Settings → Authorized domains.
+ */
 export async function sendPasswordResetToEmail(email: string): Promise<void> {
   const auth = requireAuth();
-  await sendPasswordResetEmail(auth, email.trim());
+  const trimmed = email.trim();
+  try {
+    const continueUrl = Linking.createURL('reset-password');
+    await sendPasswordResetEmail(auth, trimmed, {
+      url: continueUrl,
+      handleCodeInApp: true,
+    });
+  } catch {
+    await sendPasswordResetEmail(auth, trimmed);
+  }
+}
+
+/** Completes password reset in the app using the oobCode from the reset email link. */
+export async function completePasswordResetWithOobCode(oobCode: string, newPassword: string): Promise<void> {
+  const auth = requireAuth();
+  await confirmPasswordReset(auth, oobCode, newPassword);
 }
 
 export async function signupWithEmail(

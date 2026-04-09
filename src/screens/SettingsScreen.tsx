@@ -22,6 +22,7 @@ const LANGS: { code: AppLanguage; label: string }[] = [
   { code: 'en', label: 'English' },
   { code: 'ur', label: 'اردو' },
   { code: 'hi', label: 'हिन्दी' },
+  { code: 'ar', label: 'العربية' },
 ];
 
 export function SettingsScreen() {

@@ -1,6 +1,7 @@
 /**
- * Loads Noto Nastaliq Urdu and exposes font + RTL-friendly styles when language is Urdu.
+ * Loads Noto Nastaliq (Urdu) + Noto Sans Arabic and RTL layout for Urdu / Arabic.
  */
+import { NotoSansArabic_400Regular } from '@expo-google-fonts/noto-sans-arabic';
 import { NotoNastaliqUrdu_400Regular, useFonts } from '@expo-google-fonts/noto-nastaliq-urdu';
 import React, { createContext, useContext, useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -8,10 +9,13 @@ import { useTranslation } from 'react-i18next';
 import { colors } from './colors';
 
 type Typo = {
-  /** Font family for Text/TextInput when Urdu is active; undefined keeps system default */
+  /** @deprecated use scriptFont */
   urduFont?: string;
+  /** Font for Urdu or Arabic script UI */
+  scriptFont?: string;
   isUrdu: boolean;
-  /** Prefer right-aligned text in Urdu */
+  isArabic: boolean;
+  isRtl: boolean;
   textAlign: 'left' | 'right';
   writingDirection: 'ltr' | 'rtl';
 };
@@ -20,17 +24,30 @@ const TypoCtx = createContext<Typo | undefined>(undefined);
 
 export function TypographyProvider({ children }: { children: React.ReactNode }) {
   const { i18n } = useTranslation();
-  const [loaded] = useFonts({ NotoNastaliqUrdu_400Regular });
+  const [loaded] = useFonts({
+    NotoNastaliqUrdu_400Regular,
+    NotoSansArabic_400Regular,
+  });
 
   const isUrdu = i18n.language === 'ur';
+  const isArabic = i18n.language === 'ar';
+  const isRtl = isUrdu || isArabic;
   const value = useMemo<Typo>(() => {
+    const scriptFont = isUrdu
+      ? 'NotoNastaliqUrdu_400Regular'
+      : isArabic
+        ? 'NotoSansArabic_400Regular'
+        : undefined;
     return {
-      urduFont: isUrdu ? 'NotoNastaliqUrdu_400Regular' : undefined,
+      scriptFont,
+      urduFont: scriptFont,
       isUrdu,
-      textAlign: isUrdu ? 'right' : 'left',
-      writingDirection: isUrdu ? 'rtl' : 'ltr',
+      isArabic,
+      isRtl,
+      textAlign: isRtl ? 'right' : 'left',
+      writingDirection: isRtl ? 'rtl' : 'ltr',
     };
-  }, [isUrdu]);
+  }, [isUrdu, isArabic, isRtl]);
 
   if (!loaded) {
     return (
@@ -42,7 +59,7 @@ export function TypographyProvider({ children }: { children: React.ReactNode }) 
 
   return (
     <TypoCtx.Provider value={value}>
-      <View style={[styles.flex, isUrdu && styles.rtlRoot]}>{children}</View>
+      <View style={[styles.flex, isRtl && styles.rtlRoot]}>{children}</View>
     </TypoCtx.Provider>
   );
 }
@@ -52,7 +69,10 @@ export function useTypography(): Typo {
   if (!v) {
     return {
       urduFont: undefined,
+      scriptFont: undefined,
       isUrdu: false,
+      isArabic: false,
+      isRtl: false,
       textAlign: 'left',
       writingDirection: 'ltr',
     };

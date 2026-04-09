@@ -61,6 +61,7 @@ export function ForgotPasswordScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.body}>{t('forgotPasswordHint')}</Text>
+        <Text style={styles.body}>{t('forgotPasswordInAppHint')}</Text>
         <LabeledInput
           label={t('email')}
           value={email}
@@ -71,6 +72,12 @@ export function ForgotPasswordScreen() {
         />
         <PrimaryButton title={t('sendResetLink')} onPress={submit} disabled={busy} />
         {busy ? <ActivityIndicator color={colors.primary} style={styles.spin} /> : null}
+        <View style={{ height: 12 }} />
+        <PrimaryButton
+          title={t('setNewPasswordInApp')}
+          variant="outline"
+          onPress={() => nav.navigate('ResetPassword')}
+        />
         <View style={{ height: 12 }} />
         <PrimaryButton title={t('backToLogin')} variant="outline" onPress={() => nav.goBack()} />
       </ScrollView>
