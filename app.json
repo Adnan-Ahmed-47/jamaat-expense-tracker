@@ -1,32 +1,32 @@
 {
   "expo": {
-    "name": "Tabligh Expenses",
+    "name": "Tableegh Expense Manager",
     "slug": "JamaatCalc",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon-masjid.png",
+    "icon": "./assets/icon-app.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "scheme": "jamaatcalc",
     "splash": {
       "image": "./assets/splash-solid.png",
       "resizeMode": "cover",
-      "backgroundColor": "#2E7D32"
+      "backgroundColor": "#1B5E20"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon-masjid.png",
-        "backgroundColor": "#2E7D32"
+        "foregroundImage": "./assets/icon-app.png",
+        "backgroundColor": "#1B5E20"
       },
       "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.JamaatCalc"
     },
     "web": {
-      "favicon": "./assets/icon-masjid.png"
+      "favicon": "./assets/icon-app.png"
     },
     "extra": {
       "firebaseApiKey": "AIzaSyCBUgeBgXJt2dc3RaAYrbqnnHZu1KD3_EM",
@@ -41,16 +41,16 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash-solid.png",
-          "backgroundColor": "#2E7D32",
+          "backgroundColor": "#1B5E20",
           "resizeMode": "cover",
           "android": {
             "image": "./assets/splash-solid.png",
-            "backgroundColor": "#2E7D32",
+            "backgroundColor": "#1B5E20",
             "resizeMode": "cover"
           },
           "ios": {
             "image": "./assets/splash-solid.png",
-            "backgroundColor": "#2E7D32",
+            "backgroundColor": "#1B5E20",
             "resizeMode": "cover"
           }
         }

@@ -1,5 +1,5 @@
 {
-  "appName": "Tabligh Expenses",
+  "appName": "Tableegh Expense Manager",
   "homeSubtitle": "Track contributions, expenses, and fair shares for your jamaat trips.",
   "jamaats": "Jamaats",
   "addJamaat": "Add Jamaat",
@@ -93,7 +93,7 @@
   "invalidCode": "Invalid Code",
   "networkError": "Network error. Check your connection and try again.",
   "shareInviteCode": "Share invite code",
-  "shareInviteMessage": "Join our jamaat in Tabligh Expenses with this invite code:",
+  "shareInviteMessage": "Join our jamaat in Tableegh Expense Manager with this invite code:",
   "firebaseNotConfigured": "Cloud sync is not set up. Add Firebase keys in app config.",
   "firebaseCreateFailed": "Could not create cloud jamaat. It was saved on this device only.",
   "memberNotSynced": "This member is not synced to the cloud yet. Wait for sync or pick another payer.",

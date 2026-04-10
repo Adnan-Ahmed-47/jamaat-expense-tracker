@@ -1,5 +1,5 @@
 {
-  "appName": "Tabligh Expenses",
+  "appName": "Tableegh Expense Manager",
   "homeSubtitle": "اپنی جماعت کے لیے شراکت، خرچ اور منصفانہ حصہ رکھیں۔",
   "jamaats": "جماعتیں",
   "addJamaat": "جماعت شامل کریں",
@@ -93,7 +93,7 @@
   "invalidCode": "غلط کوڈ",
   "networkError": "نیٹ ورک خرابی۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔",
   "shareInviteCode": "دعوتی کوڈ شیئر کریں",
-  "shareInviteMessage": "Tabligh Expenses میں اس دعوتی کوڈ سے ہماری جماعت میں شامل ہوں:",
+  "shareInviteMessage": "Tableegh Expense Manager میں اس دعوتی کوڈ سے ہماری جماعت میں شامل ہوں:",
   "firebaseNotConfigured": "کلاؤڈ سنک سیٹ نہیں۔ ایپ کنفیگ میں Firebase کیز شامل کریں۔",
   "firebaseCreateFailed": "کلاؤڈ جماعت نہیں بن سکی۔ یہ صرف اس ڈیوائس پر محفوظ ہوئی۔",
   "memberNotSynced": "یہ رکن ابھی کلاؤڈ سے سنک نہیں۔ انتظار کریں یا دوسرا ادا کنندہ چنیں۔",

@@ -16,7 +16,7 @@ export async function shareBackupJson(db: SQLiteDatabase, firebaseUid?: string):
   if (canShare) {
     await Sharing.shareAsync(path, {
       mimeType: 'application/json',
-      dialogTitle: 'Tabligh Expenses backup',
+      dialogTitle: 'Tableegh Expense Manager backup',
     });
   }
 }

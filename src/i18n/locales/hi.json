@@ -1,5 +1,5 @@
 {
-  "appName": "Tabligh Expenses",
+  "appName": "Tableegh Expense Manager",
   "homeSubtitle": "अपनी जमाअत के लिए योगदान, खर्च और उचित हिस्सा ट्रैक करें।",
   "jamaats": "जमाअतें",
   "addJamaat": "जमाअत जोड़ें",
@@ -93,7 +93,7 @@
   "invalidCode": "अमान्य कोड",
   "networkError": "नेटवर्क त्रुटि। कनेक्शन जाँचें और फिर कोशिश करें।",
   "shareInviteCode": "आमंत्रण कोड साझा करें",
-  "shareInviteMessage": "Tabligh Expenses में इस आमंत्रण कोड से हमारी जमाअत में शामिल हों:",
+  "shareInviteMessage": "Tableegh Expense Manager में इस आमंत्रण कोड से हमारी जमाअत में शामिल हों:",
   "firebaseNotConfigured": "क्लाउड सिंक सेट नहीं है। ऐप कॉन्फ़िग में Firebase कुंजियाँ जोड़ें।",
   "firebaseCreateFailed": "क्लाउड जमाअत नहीं बन सकी। यह केवल इस डिवाइस पर सहेजी गई।",
   "memberNotSynced": "यह सदस्य अभी क्लाउड से सिंक नहीं है। प्रतीक्षा करें या दूसरा भुगतानकर्ता चुनें।",

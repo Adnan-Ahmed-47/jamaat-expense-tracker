@@ -1,5 +1,5 @@
 {
-  "appName": "مصاريف الدعوة",
+  "appName": "Tableegh Expense Manager",
   "homeSubtitle": "تتبع المساهمات والمصروفات والحصص العادلة لرحلات الجماعة.",
   "jamaats": "الجماعات",
   "addJamaat": "إضافة جماعة",
@@ -93,7 +93,7 @@
   "invalidCode": "رمز غير صالح",
   "networkError": "خطأ في الشبكة. تحقق من الاتصال وحاول مرة أخرى.",
   "shareInviteCode": "مشاركة رمز الدعوة",
-  "shareInviteMessage": "انضم إلى جماعتنا في مصاريف الدعوة بهذا الرمز:",
+  "shareInviteMessage": "انضم إلى جماعتنا في Tableegh Expense Manager بهذا الرمز:",
   "firebaseNotConfigured": "لم يُضبط المزامنة السحابية. أضف مفاتيح Firebase في إعدادات التطبيق.",
   "firebaseCreateFailed": "تعذر إنشاء الجماعة في السحابة. حُفظت على هذا الجهاز فقط.",
   "memberNotSynced": "هذا العضو غير متزامن مع السحابة بعد. انتظر المزامنة أو اختر دافعًا آخر.",

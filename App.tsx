@@ -27,17 +27,21 @@ export default function App() {
 
   if (!splashDone) {
     return (
-      <View style={styles.boot}>
-        <SplashBoot onDone={() => setSplashDone(true)} />
-      </View>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics ?? undefined}>
+        <View style={styles.boot}>
+          <SplashBoot onDone={() => setSplashDone(true)} />
+        </View>
+      </SafeAreaProvider>
     );
   }
 
   if (!i18nReady) {
     return (
-      <View style={styles.bootLoading}>
-        <ActivityIndicator size="large" color="#fff" />
-      </View>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics ?? undefined}>
+        <View style={styles.bootLoading}>
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
+      </SafeAreaProvider>
     );
   }
 
@@ -59,7 +63,7 @@ const styles = StyleSheet.create({
   boot: { flex: 1 },
   bootLoading: {
     flex: 1,
-    backgroundColor: '#2E7D32',
+    backgroundColor: '#1B5E20',
     alignItems: 'center',
     justifyContent: 'center',
   },
