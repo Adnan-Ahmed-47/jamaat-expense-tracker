@@ -3,17 +3,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Keyboard,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Keyboard, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { JamaatCard } from '../components/JamaatCard';
 import { DatePickerField } from '../components/DatePickerField';
@@ -140,62 +130,61 @@ export function HomeScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.sectionHead}>
-        <Text style={styles.sectionTitle}>{t('jamaats')}</Text>
-        <View style={styles.sectionBtns}>
-          <PrimaryButton
-            title={t('joinJamaat')}
-            variant="outline"
-            onPress={() => nav.navigate('JoinJamaat')}
-            style={styles.joinBtn}
-          />
-          <PrimaryButton title={t('addJamaat')} onPress={openCreate} style={styles.addBtn} />
-        </View>
-      </View>
-      {!firebaseOn ? (
-        <Text style={styles.cloudHint}>{t('cloudSyncJoinHintShort')}</Text>
-      ) : null}
-
-      {loading ? (
-        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
-      ) : (
-        <FlatList
-          data={list}
-          keyExtractor={(j) => String(j.id)}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.empty}>{t('noJamaats')}</Text>}
-          renderItem={({ item }) => (
-            <JamaatCard jamaat={item} onPress={() => nav.navigate('JamaatDetail', { jamaatId: item.id })} />
-          )}
-        />
-      )}
-
-      <Modal visible={modal} animationType="slide" transparent>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{t('addJamaat')}</Text>
-            <LabeledInput label={t('jamaatName')} value={name} onChangeText={setName} />
-            <DatePickerField label={t('startDate')} valueYmd={start} onChangeYmd={setStart} />
-            <DatePickerField
-              label={t('endDate')}
-              valueYmd={end}
-              onChangeYmd={setEnd}
-              minimumDate={new Date(start + 'T12:00:00')}
+      <View style={styles.body}>
+        <View style={styles.sectionHead}>
+          <Text style={styles.sectionTitle}>{t('jamaats')}</Text>
+          <View style={styles.sectionBtns}>
+            <PrimaryButton
+              title={t('joinJamaat')}
+              variant="outline"
+              onPress={() => nav.navigate('JoinJamaat')}
+              style={styles.joinBtn}
             />
-            <View style={styles.modalActions}>
-              <PrimaryButton title={t('cancel')} variant="outline" onPress={() => setModal(false)} />
-              <PrimaryButton title={t('save')} onPress={saveJamaat} />
-            </View>
+            <PrimaryButton title={t('addJamaat')} onPress={openCreate} style={styles.addBtn} />
           </View>
         </View>
-      </Modal>
+        {!firebaseOn ? <Text style={styles.cloudHint}>{t('cloudSyncJoinHintShort')}</Text> : null}
 
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+        ) : (
+          <FlatList
+            data={list}
+            keyExtractor={(j) => String(j.id)}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={<Text style={styles.empty}>{t('noJamaats')}</Text>}
+            renderItem={({ item }) => (
+              <JamaatCard jamaat={item} onPress={() => nav.navigate('JamaatDetail', { jamaatId: item.id })} />
+            )}
+          />
+        )}
+
+        <Modal visible={modal} animationType="slide" transparent>
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>{t('addJamaat')}</Text>
+              <LabeledInput label={t('jamaatName')} value={name} onChangeText={setName} />
+              <DatePickerField label={t('startDate')} valueYmd={start} onChangeYmd={setStart} />
+              <DatePickerField
+                label={t('endDate')}
+                valueYmd={end}
+                onChangeYmd={setEnd}
+                minimumDate={new Date(start + 'T12:00:00')}
+              />
+              <View style={styles.modalActions}>
+                <PrimaryButton title={t('cancel')} variant="outline" onPress={() => setModal(false)} />
+                <PrimaryButton title={t('save')} onPress={saveJamaat} />
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1, backgroundColor: colors.primaryDark },
   header: {
     paddingHorizontal: 20,
     paddingTop: 8,
@@ -203,8 +192,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    backgroundColor: colors.primaryDark,
   },
+  body: { flex: 1, backgroundColor: colors.background },
   title: { fontSize: 22, fontWeight: '800', color: '#fff' },
   sub: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 6, maxWidth: '88%' },
   gear: { padding: 8 },

@@ -47,49 +47,51 @@ export function expenseTotalsByCategory(expenses: Expense[]): Record<ExpenseCate
   return base;
 }
 
+function isMemberActiveOnDate(member: Member, ymd: string): boolean {
+  if (!ymd) return false;
+  if (ymd < member.joinDate) return false;
+  if (member.leaveDate && ymd > member.leaveDate) return false;
+  return true;
+}
+
 /**
- * Fair share = (member person-days / total person-days) × total expenses.
- * Members with 0 person-days get 0 share (edge: join/leave outside window).
+ * Fair share is computed per expense date:
+ * each expense is split among members active on that expense day.
  */
 export function computeFairShares(
   jamaat: Jamaat,
   members: Member[],
-  totalExpenses: number
+  expenses: Expense[]
 ): Map<number, number> {
   const map = new Map<number, number>();
-  let totalPersonDays = 0;
-  const daysByMember = new Map<number, number>();
+  for (const m of members) map.set(m.id, 0);
+  if (members.length === 0 || expenses.length === 0) return map;
 
-  for (const m of members) {
-    const pd = memberPersonDays(jamaat.startDate, jamaat.endDate, m.joinDate, m.leaveDate);
-    daysByMember.set(m.id, pd);
-    totalPersonDays += pd;
-  }
+  const expenseItems = [...expenses]
+    .filter((e) => e.expenseDate >= jamaat.startDate && e.expenseDate <= jamaat.endDate)
+    .sort((a, b) => (a.expenseDate < b.expenseDate ? -1 : a.expenseDate > b.expenseDate ? 1 : 0));
 
-  if (totalPersonDays <= 0 || totalExpenses <= 0) {
-    for (const m of members) map.set(m.id, 0);
-    return map;
-  }
-
-  for (const m of members) {
-    const pd = daysByMember.get(m.id) ?? 0;
-    const share = roundMoney((pd / totalPersonDays) * totalExpenses);
-    map.set(m.id, share);
-  }
-
-  const assigned = roundMoney([...map.values()].reduce((a, b) => a + b, 0));
-  const drift = roundMoney(totalExpenses - assigned);
-  if (drift !== 0 && members.length > 0) {
-    let best = members[0];
-    let bestPd = daysByMember.get(best.id) ?? 0;
-    for (const m of members) {
-      const pd = daysByMember.get(m.id) ?? 0;
-      if (pd > bestPd) {
-        bestPd = pd;
-        best = m;
-      }
+  for (const e of expenseItems) {
+    const active = members.filter((m) => isMemberActiveOnDate(m, e.expenseDate));
+    if (active.length === 0) continue;
+    const split = roundMoney(e.amount / active.length);
+    for (const m of active) {
+      map.set(m.id, roundMoney((map.get(m.id) ?? 0) + split));
     }
-    map.set(best.id, roundMoney((map.get(best.id) ?? 0) + drift));
+    const assigned = roundMoney(split * active.length);
+    const drift = roundMoney(e.amount - assigned);
+    if (drift !== 0) {
+      const chosen = active.reduce((best, cur) => (cur.id < best.id ? cur : best), active[0]);
+      map.set(chosen.id, roundMoney((map.get(chosen.id) ?? 0) + drift));
+    }
+  }
+
+  const totalExpenses = roundMoney(expenseItems.reduce((s, e) => s + (e.amount ?? 0), 0));
+  const assignedTotal = roundMoney([...map.values()].reduce((a, b) => a + b, 0));
+  const totalDrift = roundMoney(totalExpenses - assignedTotal);
+  if (totalDrift !== 0 && members.length > 0) {
+    const first = [...members].sort((a, b) => a.id - b.id)[0];
+    map.set(first.id, roundMoney((map.get(first.id) ?? 0) + totalDrift));
   }
 
   return map;
@@ -188,7 +190,7 @@ export function buildJamaatSettlement(
   const totalExpenses = sumExpenses(expenses);
   const totalContributions = sumContributions(members);
   const jDays = totalJamaatDays(jamaat);
-  const fairMap = computeFairShares(jamaat, members, totalExpenses);
+  const fairMap = computeFairShares(jamaat, members, expenses);
 
   let totalPersonDays = 0;
   for (const m of members) {
@@ -231,7 +233,7 @@ export function buildJamaatClosureReport(
   const totalContributions = sumContributions(members);
   const totalExpenses = sumExpenses(expenses);
   const remainingInPool = roundMoney(totalContributions - totalExpenses);
-  const fairMap = computeFairShares(jamaat, members, totalExpenses);
+  const fairMap = computeFairShares(jamaat, members, expenses);
   const ids = members.map((m) => m.id);
 
   const contribWeight = new Map<number, number>();

@@ -3,15 +3,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Modal,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MemberCard } from '../components/MemberCard';
 import { DatePickerField } from '../components/DatePickerField';
@@ -36,6 +28,7 @@ import {
 import { colors } from '../theme/colors';
 import type { Member } from '../types/models';
 import { validateMemberDates } from '../utils/calculations';
+import { memberPersonDays, toYMD } from '../utils/dateUtils';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Members'>;
 type R = RouteProp<RootStackParamList, 'Members'>;
@@ -168,10 +161,85 @@ export function MembersScreen() {
   const remove = async (m: Member) => {
     const ex = await getExpensesByJamaat(db, jamaatId);
     const paid = ex.some((e) => e.paidByMemberId === m.id);
+    const personDays = memberPersonDays(jamaatStart, jamaatEnd, m.joinDate, m.leaveDate);
+
     if (paid) {
       Alert.alert(t('error'), t('cannotDeleteMember'));
       return;
     }
+
+    if (personDays > 0) {
+      Alert.alert(t('delete'), t('memberHasHistoryBody'), [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('markLeft'),
+          onPress: async () => {
+            if (actionLockRef.current) return;
+            try {
+              actionLockRef.current = true;
+              setActionBusy(true);
+              setModal(false);
+              const today = toYMD(new Date());
+              let leaveYmd = today;
+              if (leaveYmd < m.joinDate) leaveYmd = m.joinDate;
+              if (leaveYmd > jamaatEnd) leaveYmd = jamaatEnd;
+              const jamaat = await getJamaatById(db, jamaatId);
+              const cloud = Boolean(jamaat?.firebaseDocId) && isFirebaseConfigured();
+              if (cloud && m.firestoreMemberId && jamaat?.firebaseDocId) {
+                try {
+                  await updateMemberDocumentCloud(jamaat.firebaseDocId, m.firestoreMemberId, {
+                    name: m.name,
+                    contribution: m.contribution,
+                    joinDate: m.joinDate,
+                    leaveDate: leaveYmd,
+                  });
+                } catch (e) {
+                  console.warn(e);
+                  Alert.alert(t('error'), t('networkError'));
+                  return;
+                }
+              }
+              await updateMember(db, m.id, m.name, m.contribution, m.joinDate, leaveYmd);
+              await load();
+            } finally {
+              actionLockRef.current = false;
+              setActionBusy(false);
+            }
+          },
+        },
+        {
+          text: t('delete'),
+          style: 'destructive',
+          onPress: async () => {
+            if (actionLockRef.current) return;
+            try {
+              actionLockRef.current = true;
+              setActionBusy(true);
+              setModal(false);
+              const jamaat = await getJamaatById(db, jamaatId);
+              if (m.firestoreMemberId && isFirebaseConfigured() && jamaat?.firebaseDocId) {
+                try {
+                  await deleteMemberDocumentCloud(jamaat.firebaseDocId, m.firestoreMemberId);
+                } catch (e) {
+                  console.warn(e);
+                  Alert.alert(t('error'), t('networkError'));
+                  return;
+                }
+              }
+              await deleteMember(db, m.id);
+              await load();
+            } catch {
+              Alert.alert(t('error'), t('cannotDeleteMember'));
+            } finally {
+              actionLockRef.current = false;
+              setActionBusy(false);
+            }
+          },
+        },
+      ]);
+      return;
+    }
+
     Alert.alert(t('delete'), t('confirmDeleteMember'), [
       { text: t('cancel'), style: 'cancel' },
       {

@@ -84,6 +84,8 @@
   "confirmDeleteJamaat": "Delete this jamaat and all members and expenses?",
   "confirmDeleteMember": "Remove this member? You must delete or reassign their paid expenses first if any exist.",
   "cannotDeleteMember": "This member has expenses recorded as payer. Edit or delete those expenses first.",
+  "memberHasHistoryBody": "This member has already been part of this jamaat. You can mark them as having left (keeps earlier days in the split) or delete them completely.",
+  "markLeft": "Mark as left",
   "jamaatDaysLabel": "Trip length (days)",
   "datesAutoExpandHint": "Trip dates widen automatically to include all expense and member dates (only expands). Use Edit jamaat if you need to shorten the range.",
   "joinJamaat": "Join Jamaat",
