@@ -112,17 +112,19 @@ export function SettingsScreen() {
           ))}
         </AppCard>
 
-        <Text style={styles.section}>{t('cloudSyncSection')}</Text>
+        {/* Cloud Sync Section */}
+        {/* <Text style={styles.section}>{t('cloudSyncSection')}</Text>
         <AppCard>
           <Text style={styles.cloudBody}>{t('cloudSyncSettingsBody')}</Text>
           <Text style={styles.cloudStatus}>
             {isFirebaseConfigured() ? t('cloudSyncStatusOn') : t('cloudSyncStatusOff')}
           </Text>
-        </AppCard>
+        </AppCard> */}
 
-        <Text style={styles.section}>{t('backup')}</Text>
+        {/* Backup Section - Disabled for now  */}
+        {/* <Text style={styles.section}>{t('backup')}</Text>
         <PrimaryButton title={t('backup')} onPress={backup} />
-        <PrimaryButton title={t('restore')} variant="outline" onPress={restore} />
+        <PrimaryButton title={t('restore')} variant="outline" onPress={restore} /> */}
       </ScrollView>
     </SafeAreaView>
   );

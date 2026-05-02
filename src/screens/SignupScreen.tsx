@@ -54,13 +54,19 @@ export function SignupScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <LabeledInput label={t('displayNameOptional')} value={name} onChangeText={setName} />
+        <LabeledInput
+          label={t('displayNameOptional')}
+          value={name}
+          onChangeText={setName}
+          placeholder={t('placeholderDisplayName')}
+        />
         <LabeledInput
           label={t('email')}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
+          placeholder={t('placeholderEmail')}
         />
         <LabeledInput
           label={t('password')}
@@ -68,11 +74,16 @@ export function SignupScreen() {
           onChangeText={setPassword}
           secureTextEntry
           passwordToggle
+          placeholder={t('placeholderPassword')}
         />
         <PrimaryButton title={t('signup')} onPress={submit} disabled={busy} />
         {busy ? <ActivityIndicator color={colors.primary} style={styles.spin} /> : null}
-        <View style={{ height: 8 }} />
-        <PrimaryButton title={t('backToLogin')} variant="outline" onPress={() => nav.pop()} />
+        <PrimaryButton
+          title={t('backToLogin')}
+          variant="outline"
+          onPress={() => nav.pop()}
+          style={styles.backToLoginBtn}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -82,4 +93,5 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: 20, paddingBottom: 40 },
   spin: { marginTop: 16 },
+  backToLoginBtn: { marginTop: 16 },
 });

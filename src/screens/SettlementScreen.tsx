@@ -162,7 +162,8 @@ export function SettlementScreen() {
           ))
         )}
 
-        <PrimaryButton title={t('exportPdf')} onPress={exportPdf} />
+        {/* Export PDF Button - Disabled for now  */}
+        {/* <PrimaryButton title={t('exportPdf')} onPress={exportPdf} /> */}
       </ScrollView>
     </SafeAreaView>
   );

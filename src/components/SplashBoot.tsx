@@ -12,8 +12,10 @@ type Props = {
   onDone: () => void;
 };
 
+/** Shortest time splash stays visible (after Lottie ends). */
 const MIN_MS = 2800;
-const MAX_MS = 7000;
+/** Safety cap if Lottie never reports completion. */
+const MAX_MS = 12000;
 
 export function SplashBoot({ onDone }: Props) {
   const insets = useSafeAreaInsets();
@@ -28,6 +30,7 @@ export function SplashBoot({ onDone }: Props) {
     void SplashScreen.hideAsync().catch(() => {});
   }, []);
 
+  /** Run only when Lottie finishes (or MAX_MS fallback). Do not tie this to the footer title animation. */
   const scheduleDone = () => {
     if (finishedRef.current) return;
     finishedRef.current = true;
@@ -53,9 +56,7 @@ export function SplashBoot({ onDone }: Props) {
           useNativeDriver: true,
         }),
       ]),
-    ]).start(({ finished }) => {
-      if (finished) scheduleDone();
-    });
+    ]).start();
 
     const maxTimer = setTimeout(() => {
       scheduleDone();
@@ -76,7 +77,10 @@ export function SplashBoot({ onDone }: Props) {
           speed={1}
           resizeMode="contain"
           style={styles.lottie}
-          onAnimationFinish={scheduleDone}
+          onAnimationFinish={(isCancelled) => {
+            if (isCancelled) return;
+            scheduleDone();
+          }}
         />
       </View>
 

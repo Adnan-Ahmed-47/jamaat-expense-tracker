@@ -113,6 +113,7 @@ export function LoginScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
               autoComplete="email"
+              placeholder={t('placeholderEmail')}
             />
             <LabeledInput
               label={t('password')}
@@ -121,6 +122,7 @@ export function LoginScreen() {
               secureTextEntry
               passwordToggle
               autoComplete="password"
+              placeholder={t('placeholderPassword')}
             />
             <Pressable
               onPress={() => {
@@ -145,6 +147,7 @@ export function LoginScreen() {
               onChangeText={setPhone}
               keyboardType="phone-pad"
               autoComplete="tel"
+              placeholder={t('placeholderPhone')}
             />
             {firebaseConfig ? (
               <FirebaseRecaptchaVerifierModal
@@ -159,7 +162,12 @@ export function LoginScreen() {
 
         {busy ? <ActivityIndicator color={colors.primary} style={styles.spin} /> : null}
 
-        <PrimaryButton title={t('goToSignup')} variant="outline" onPress={() => nav.navigate('Signup')} />
+        <PrimaryButton
+          title={t('goToSignup')}
+          variant="outline"
+          onPress={() => nav.navigate('Signup')}
+          style={styles.authSecondaryBtn}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -189,4 +197,6 @@ const styles = StyleSheet.create({
   forgotText: { fontSize: 14, fontWeight: '600', color: colors.primaryDark },
   inAppResetWrap: { alignSelf: 'flex-end', marginBottom: 14 },
   inAppResetText: { fontSize: 13, fontWeight: '600', color: colors.primary },
+  /** Space between primary action (Sign in / Send OTP) and Create account */
+  authSecondaryBtn: { marginTop: 16 },
 });
